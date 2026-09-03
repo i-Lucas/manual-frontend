@@ -50,8 +50,9 @@
 │   ├── i18n/                      ← Textos globais compartilhados (common.{locale}.json)
 │   ├── utils/                     ← Utilitários globais
 │   ├── contexts/                  ← Contextos globais (Provider pattern)
-│   ├── styles/
-│   │   └── global.css             ← ÚNICO arquivo CSS global
+│   ├── assets/
+│   │   └── styles/
+│   │       └── Global.css         ← ÚNICO arquivo CSS global (ver 04)
 │   ├── router/
 │   │   ├── AppRouter.tsx          ← tabela de rotas
 │   │   ├── routes.ts              ← as páginas, declaradas como chunks sob demanda
