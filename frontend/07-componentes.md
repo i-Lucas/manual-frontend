@@ -61,6 +61,7 @@ Sessões da página. Sempre divididos em `Component` (visual puro) + `Container`
 8. **Nenhuma string de UI literal.** Todo texto visível vem do `useT` (ver `10.6`). Um título, label ou mensagem escrito direto no JSX é um erro — equivale a um `style` inline.
 9. **Nenhuma constante mágica no componente.** Números, listas fixas e mapas de configuração vêm de `constants/` (ver `16`).
 10. **`react-bootstrap` só é importado dentro de `src/components/`.** Um componente de módulo que importa da biblioteca é um erro de arquitetura — o componente global correspondente precisa ser criado antes, mesmo que no primeiro dia ele só repasse props. Única exceção: os primitivos de layout `Container`, `Row`, `Col` e `Stack` (ver `04`).
+11. **Componentes globais não levam prefixo.** `Modal`, `Button`, `Card`, `Pagination` — nunca `AppModal`, `AppButton`, `UiCard`. O prefixo não acrescenta informação: o caminho do import (`@/components/Modal`) já diz que o componente é global. Quando o nome colide com o da biblioteca, quem recebe alias é a biblioteca, dentro do wrapper: `import { Modal as BsModal } from 'react-bootstrap'`.
 
 ## Exemplo completo: componente atômico com Composition Pattern
 

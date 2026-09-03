@@ -27,7 +27,7 @@ Definir **tudo que vai existir na tela** — cada página, cada modal, cada seç
 - **Dados como constantes inline.** Arrays e objetos fake declarados no topo do arquivo — sem services, sem fetch, sem mocks externos.
 - **Estado mínimo e justificado.** Apenas o `useState` necessário para testar a UI: abrir/fechar modal, trocar de aba, selecionar filtro. Sem `useEffect`, sem lógica de negócio.
 - **Sem types complexos.** Tipos simples inline se necessário; nada em `/models`.
-- **Sem imports de outros módulos.** Componentes globais (`AppModal`, `Pagination`, `SearchInput`) são permitidos — tudo do módulo fica inline.
+- **Sem imports de outros módulos.** Componentes globais (`Modal`, `Pagination`, `SearchInput`) são permitidos — tudo do módulo fica inline.
 - **Não aplicar os padrões do manual** (composition pattern, container/presenter, facade, strategy, etc.). Essa fase é propositalmente simples para permitir iteração rápida.
 
 ### Por que não aplicar os padrões?
