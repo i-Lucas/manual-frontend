@@ -6,7 +6,7 @@ Todo projeto frontend deve utilizar Bootstrap e react-bootstrap como base da int
 
 A estilização deve seguir esta ordem de prioridade:
 
-1. Componentes do react-bootstrap
+1. Componentes globais de `src/components/` (que envelopam o react-bootstrap)
 2. Classes utilitárias nativas do Bootstrap
 3. Utilitários globais do projeto, somente quando o Bootstrap não oferecer uma solução adequada
 4. Composition Pattern para variações estruturais ou visuais que dependam do estado/contexto do componente
@@ -54,7 +54,9 @@ Evite criar CSS responsivo manual quando as utilities do Bootstrap forem suficie
 
 Não recrie manualmente funcionalidades que já existem no Bootstrap ou no react-bootstrap.
 
-Sempre prefira componentes do react-bootstrap quando houver um componente adequado.
+O react-bootstrap entrega prontos praticamente todos os componentes estruturais da interface — e já os entrega no Composition Pattern que este guia exige: `Card.Header`/`Card.Body`, `Modal.Header`/`Modal.Body`/`Modal.Footer`, `Accordion.Item`/`Accordion.Header`, `Form.Group`/`Form.Label`/`Form.Control`. Escrever à mão um `Accordion`, um `Pagination`, um `Offcanvas` ou um `Spinner` é trabalho jogado fora e fonte garantida de divergência visual entre módulos.
+
+Sempre prefira componentes do react-bootstrap quando houver um componente adequado — **consumidos através da camada de componentes globais, nunca importados diretamente no módulo** (ver a seção seguinte).
 
 | Necessidade | Preferir |
 |---|---|
@@ -82,6 +84,98 @@ Da mesma forma, propriedades CSS comuns devem ser representadas por classes Boot
 // ✅ CERTO
 <div className="d-flex align-items-center gap-3">
 ```
+
+## react-bootstrap é consumido apenas pela camada de componentes globais
+
+> **Ditado do dono (03-09-2026).** `react-bootstrap` é uma dependência de `src/components/` — e somente dela.
+
+**Nenhum módulo importa de `react-bootstrap` diretamente.**
+
+Todo componente da biblioteca que a aplicação for usar precisa existir antes como componente global em `src/components/`. Módulos, Containers, Presenters e componentes de módulo importam de `src/components/` — nunca da biblioteca.
+
+```tsx
+// ❌ PROIBIDO — módulo importando a biblioteca direto
+// src/modules/Sessions/components/SessionDeleteDialog.tsx
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+```
+
+```tsx
+// ✅ CERTO — módulo consome o componente global
+// src/modules/Sessions/components/SessionDeleteDialog.tsx
+import { Modal } from '@/components/Modal';
+import { Button } from '@/components/Button';
+```
+
+O componente global é o único lugar da aplicação onde a biblioteca aparece:
+
+```tsx
+// src/components/Modal/Modal.tsx
+import { memo } from 'react';
+import { Modal as BsModal } from 'react-bootstrap';
+```
+
+### Por quê
+
+Quando cada módulo importa a biblioteca direto, cada módulo passa a decidir sozinho tamanho, `centered`, `backdrop`, comportamento de fechamento, animação e estrutura interna dos seus modais. Em poucas semanas a aplicação tem cinco modais diferentes que só se parecem por acaso — e o mesmo acontece com botões, cards, tabelas, paginação e formulários. Foi exatamente assim que a densidade dos campos divergiu entre módulos antes do ditado de 05-08-2026 registrado na seção `07`.
+
+| Ganho | O que significa na prática |
+|---|---|
+| **Padronização** | Um modal da aplicação tem sempre o mesmo comportamento e a mesma aparência, decididos em um único arquivo |
+| **Reutilização** | A estrutura é escrita uma vez e composta em qualquer módulo |
+| **Comportamento próprio** | O wrapper é onde a aplicação adiciona o que a lib não faz: safe areas no mobile, bloqueio de scroll, confirmação antes de descartar um formulário sujo, emissão de evento no EventBus |
+| **Troca de dependência** | Uma quebra de compatibilidade da lib afeta `src/components/`, não 40 arquivos espalhados pelos módulos |
+
+### O wrapper envelopa — não achata
+
+O componente global preserva o Composition Pattern da biblioteca e reexporta os sub-componentes:
+
+```tsx
+Modal.Header = ModalHeader;
+Modal.Body   = ModalBody;
+Modal.Footer = ModalFooter;
+```
+
+Consumo no módulo — composição, sem flags:
+
+```tsx
+<Modal show={isOpen} onHide={handleClose}>
+  <Modal.Header>{t('sessions.delete.title')}</Modal.Header>
+  <Modal.Body>{t('sessions.delete.message')}</Modal.Body>
+  <Modal.Footer>
+    <Button variant="outline-secondary" onClick={handleClose}>{t('common.cancel')}</Button>
+    <Button variant="danger" onClick={handleConfirm}>{t('common.delete')}</Button>
+  </Modal.Footer>
+</Modal>
+```
+
+Transformar o wrapper em um monólito controlado por flags é o erro oposto, e está igualmente proibido:
+
+```tsx
+// ❌ PROIBIDO — o wrapper virou um monólito de flags
+<Modal size="lg" showFooter hideCloseButton showConfirm confirmVariant="danger" />
+```
+
+Ver **Composition Pattern é obrigatório**, adiante nesta seção.
+
+### Única exceção: primitivos de layout
+
+`Container`, `Row`, `Col` e `Stack` podem ser importados de `react-bootstrap` em qualquer camada. São a gramática de layout da aplicação: não têm comportamento a padronizar, não acumulam variações, e envelopá-los produziria indireção sem ganho nenhum.
+
+```tsx
+// ✅ PERMITIDO em qualquer arquivo
+import { Container, Row, Col, Stack } from 'react-bootstrap';
+```
+
+Todo o resto passa por `src/components/` — `Modal`, `Button`, `Card`, `Form`, `Accordion`, `Offcanvas`, `Nav`, `Navbar`, `Dropdown`, `Tab`, `Alert`, `Toast`, `Spinner`, `Placeholder`, `Pagination`, `Table`, `Badge`, `Collapse`, `InputGroup`.
+
+> **Campos de formulário:** `Form.Control`, `<input>`, `<select>` e `<textarea>` já são proibidos nos módulos pelo ditado registrado na seção `07` — use os átomos `Input`, `Select` e `Textarea`. Esta seção não abre exceção para eles.
+
+### Quando o componente global ainda não existe
+
+Não importe a biblioteca "só dessa vez". Crie o componente global em `src/components/` — diretório próprio, `models/`, `index.ts` e Composition Pattern, como manda a seção `07` — e só então consuma no módulo.
+
+Um wrapper que hoje apenas repassa props para a lib **não é código desnecessário**: é o ponto de extensão que evita a próxima divergência. O custo de criá-lo é um arquivo. O custo de não criá-lo é descobrir, seis meses depois, que existem sete modais diferentes na aplicação.
 
 ## Valores aproximados devem utilizar a utility Bootstrap mais próxima
 
@@ -501,6 +595,10 @@ import { cardStyles } from './Card.styles'
 
 // ❌ CSS específico do componente
 import './Dashboard.css'
+
+// ❌ import de react-bootstrap dentro de um módulo
+// (exceto os primitivos de layout Container/Row/Col/Stack)
+import Modal from 'react-bootstrap/Modal'
 ```
 
 Também é proibido:
@@ -523,6 +621,8 @@ Antes de considerar uma tela ou componente concluído, o agente deve verificar:
 - [ ] A interface foi construída mobile-first.
 - [ ] O comportamento foi considerado para celular, tablet e desktop.
 - [ ] react-bootstrap foi utilizado quando havia componente apropriado.
+- [ ] Nenhum arquivo fora de `src/components/` importa de `react-bootstrap` (exceto os primitivos de layout `Container`/`Row`/`Col`/`Stack`).
+- [ ] Os componentes globais que envelopam a lib preservam o Composition Pattern e reexportam os sub-componentes.
 - [ ] As utilities Bootstrap foram utilizadas ao máximo.
 - [ ] Valores sem correspondência exata utilizaram a utility Bootstrap de valor efetivo mais próximo.
 - [ ] Não existe style={{ ... }}.
@@ -544,7 +644,7 @@ Antes de considerar uma tela ou componente concluído, o agente deve verificar:
 Ao implementar qualquer interface, siga esta sequência mental:
 
 ```text
-react-bootstrap
+componente global de src/components/ (envelopando react-bootstrap)
       ↓
 Bootstrap utilities
       ↓

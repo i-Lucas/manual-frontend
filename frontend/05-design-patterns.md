@@ -32,21 +32,25 @@ Todos os componentes devem adotar este padrão. Elimina condicionais de renderiz
  * Sub-componentes: Button.Icon, Button.Label, Button.Spinner
  */
 import { memo } from 'react';
+import { Button as BsButton } from 'react-bootstrap';
 import type { ButtonProps } from './models/button.types';
 import { ButtonIcon } from './ButtonIcon';
 import { ButtonLabel } from './ButtonLabel';
 import { ButtonSpinner } from './ButtonSpinner';
 
+// A biblioteca só aparece aqui, na camada de componentes globais (ver 04).
+// Nenhum módulo importa react-bootstrap diretamente.
 const ButtonRoot = memo(function ButtonRoot({ children, onClick, variant = 'primary', disabled = false, className = '' }: ButtonProps) {
   return (
-    <button
+    <BsButton
       type="button"
-      className={`btn btn-${variant} d-inline-flex align-items-center gap-2 ${className}`}
+      variant={variant}
       onClick={onClick}
       disabled={disabled}
+      className={`d-inline-flex align-items-center gap-2 ${className}`}
     >
       {children}
-    </button>
+    </BsButton>
   );
 });
 

@@ -23,6 +23,8 @@ Antes de qualquer commit, verificar:
 - [ ] Nenhum `style={{}}` inline
 - [ ] Condicionais de renderização encapsuladas em Guard components (`*Guard`), não em Containers ou Presenters
 - [ ] Container importa apenas o hook-api do módulo — nenhum sub-hook, service ou factory diretamente
+- [ ] Nenhum import de `react-bootstrap` fora de `src/components/` (exceto `Container`/`Row`/`Col`/`Stack`)
+- [ ] Componente global que envelopa a lib preserva o Composition Pattern e reexporta os sub-componentes
 
 **Estilo**
 - [ ] 100% classes Bootstrap para valores estáticos

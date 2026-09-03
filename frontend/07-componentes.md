@@ -4,6 +4,8 @@
 
 Componentes atômicos reutilizáveis por toda a aplicação. Devem implementar **Composition Pattern** e ter diretório próprio.
 
+A maior parte deles é um **wrapper sobre o react-bootstrap**: a biblioteca já resolve estrutura, acessibilidade e comportamento base, e o componente global padroniza aparência, densidade e o comportamento próprio da aplicação. Esta camada é o **único ponto do projeto autorizado a importar de `react-bootstrap`** — ver `04`.
+
 > ### ⚠️ Campo de formulário SEMPRE vem do átomo (05-08-2026, ditado do dono)
 >
 > Nenhum módulo escreve `<input>`/`<select>`/`<textarea>` cru nem `<Form.Control>`: use
@@ -58,6 +60,7 @@ Sessões da página. Sempre divididos em `Component` (visual puro) + `Container`
 7. **Condicionais de renderização pertencem a Guard components.** Nem o Presenter nem o Container decidem se algo é renderizado ou não — essa decisão é de um `*Guard` dedicado.
 8. **Nenhuma string de UI literal.** Todo texto visível vem do `useT` (ver `10.6`). Um título, label ou mensagem escrito direto no JSX é um erro — equivale a um `style` inline.
 9. **Nenhuma constante mágica no componente.** Números, listas fixas e mapas de configuração vêm de `constants/` (ver `16`).
+10. **`react-bootstrap` só é importado dentro de `src/components/`.** Um componente de módulo que importa da biblioteca é um erro de arquitetura — o componente global correspondente precisa ser criado antes, mesmo que no primeiro dia ele só repasse props. Única exceção: os primitivos de layout `Container`, `Row`, `Col` e `Stack` (ver `04`).
 
 ## Exemplo completo: componente atômico com Composition Pattern
 
