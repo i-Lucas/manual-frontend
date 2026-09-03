@@ -30,6 +30,7 @@ Antes de qualquer commit, verificar:
 - [ ] 100% classes Bootstrap para valores estáticos
 - [ ] Nenhuma classe CSS criada para estilização (exceto `Global.css`)
 - [ ] Variáveis CSS definidas apenas em `Global.css` — nunca em arquivos `.css` por módulo
+- [ ] Utilities globais nomeadas pela regra que aplicam (`.h-13r`), nunca pelo consumidor (`.chart-height`)
 
 **Hooks**
 - [ ] Estado e actions separados em hooks distintos (`useModuleState` / `useModuleActions`)

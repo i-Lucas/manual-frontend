@@ -450,6 +450,53 @@ Utilities globais devem:
 - não representar uma página ou módulo;
 - existir apenas quando não houver equivalente adequado no Bootstrap.
 
+#### O nome da utility descreve a regra — nunca quem a consome
+
+Esta é a diferença entre uma utility e uma classe de componente disfarçada.
+
+Uma classe nomeada pelo consumidor morre no primeiro reuso: `.sidebar-width` aplica
+`width: 16rem`, e quando um drawer precisar da mesma largura nasce `.drawer-width` com a
+regra idêntica. Em seis meses há cinco classes para uma declaração — que é exatamente a
+proliferação de CSS que esta seção existe para impedir.
+
+```css
+/* ❌ ERRADO — o nome amarra a regra a um componente */
+.sidebar-width { width: 16rem; }
+.chart-height  { height: 13rem; }
+.fab-offset    { margin-top: -1rem; }
+.card-shadow   { box-shadow: 0 16px 36px rgba(7, 26, 23, .18); }
+
+/* ✅ CERTO — o nome é a regra; serve a qualquer consumidor */
+.w-16r    { width: 16rem; }
+.h-13r    { height: 13rem; }
+.mt-n1r   { margin-top: -1rem; }
+.shadow-xl { box-shadow: var(--shadow-raised); }
+```
+
+**Como nomear:**
+
+| Natureza da utility | Convenção | Exemplos |
+|---|---|---|
+| Dimensão fixa | `{propriedade}-{valor}` — o valor em `rem`, `n` para negativo | `.w-16r`, `.h-13r`, `.min-h-3r`, `.mt-n1r` |
+| Continuação de escala do Bootstrap | O próximo degrau da escala existente | `.fs-7`, `.fs-8` (o Bootstrap para em `fs-6`), `.shadow-xl` |
+| Peso, tracking, cor | O valor ou o token | `.fw-750`, `.ls-tight`, `.bg-lime`, `.text-on-dark-muted` |
+| Variante responsiva | O padrão do Bootstrap: `{prop}-{breakpoint}-{valor}` | `.ms-lg-16r`, `.pb-lg-2r` |
+
+> **Teste rápido:** se o nome da classe menciona um componente, uma página, um módulo ou
+> um papel de UI (`sidebar`, `chart`, `card`, `fab`, `nav`, `hero`, `modal`), ela está
+> errada. Renomeie pelo efeito antes de commitar.
+
+**Exceção — modificadores de componente do Bootstrap.** Uma classe opt-in que só define
+variáveis `--bs-*` de um componente da biblioteca não é classe de componente nossa: ela
+parametriza um componente que já existe. Vale como override global (ver acima), e o nome
+pode citar o componente do Bootstrap.
+
+```css
+/* ✅ PERMITIDO — modificador opt-in de um componente da biblioteca */
+.progress-fill-lime     { --bs-progress-bar-bg: var(--company-lime); }
+.progress-track-on-dark { --bs-progress-bg: rgba(255, 255, 255, .18); }
+```
+
 ## Não criar classes CSS específicas de componentes
 
 É proibido criar classes como:
@@ -633,6 +680,7 @@ Antes de considerar uma tela ou componente concluído, o agente deve verificar:
 - [ ] Não foi criado nenhum arquivo .css adicional.
 - [ ] Qualquer CSS customizado necessário está no único Global.css.
 - [ ] Utilities globais adicionadas são realmente reutilizáveis e inexistentes no Bootstrap.
+- [ ] Nenhuma utility é nomeada por componente, página ou papel de UI — o nome descreve a regra.
 - [ ] Tokens compartilhados estão centralizados.
 - [ ] Componentes complexos foram decompostos.
 - [ ] Composition Pattern foi utilizado para compor variações estruturais da UI.
