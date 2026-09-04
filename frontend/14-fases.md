@@ -61,7 +61,7 @@ Transformar cada arquivo único da Fase 1 em um **módulo estruturado** — sem 
 3. **Extrair cada seção** para seu próprio arquivo em `/components/NomeSecao/`.
 4. **Decompor recursivamente** cada seção até que seus sub-componentes sejam atômicos — ou seja, não possam ser divididos sem perder identidade ou responsabilidade única.
 5. **Aplicar Composition Pattern** em cada componente: sub-componentes acessíveis via `Componente.SubComponente`.
-6. **Mover os tipos** para `/models` do módulo.
+6. **Organizar os tipos** no nível mais baixo onde são compartilhados: tipos usados em um arquivo permanecem inline; somente os compartilhados vão para o `/models` correspondente (ver `15-tipos.md`).
 7. **Extrair todo texto de UI** para `i18n/module.{pt,en}.json` e consumir via `useT` (ver `10.6`).
 8. **Extrair toda constante** (números mágicos, opções fixas) para `constants/module.constants.ts` (ver `16`).
 
@@ -97,14 +97,14 @@ src/modules/Inventory/
 │   └── INVENTORY.md               ← TODOs, pendências, decisões
 ├── hooks/                         ← vazio
 ├── models/
-│   └── inventory.types.ts         ← tipos extraídos dos componentes
+│   └── inventory.types.ts         ← somente tipos compartilhados entre arquivos
 ├── services/                      ← vazio
 └── utils/                         ← vazio (se necessário)
 ```
 
 ### Critério de saída
 
-> Nenhuma seção da página está inline em `Módulo.tsx`. Cada componente tem responsabilidade única e não pode ser decomposto mais. Composition Pattern aplicado em todos os componentes. Todos os tipos estão em `/models`. A página ainda funciona visualmente igual à Fase 1.
+> Nenhuma seção da página está inline em `Módulo.tsx`. Cada componente tem responsabilidade única e não pode ser decomposto mais. Composition Pattern aplicado em todos os componentes. Tipos locais permanecem em seu único arquivo e tipos compartilhados estão no `/models` correspondente. A página ainda funciona visualmente igual à Fase 1.
 
 ---
 
@@ -152,7 +152,7 @@ Construir toda a camada de dados: hooks, services, repository, adapter, cache e 
 
 ### Ordem de construção
 
-1. **Models** — revisar e completar os tipos em `/models` para refletir o contrato real da API
+1. **Tipos** — revisar e completar os contratos da API; manter tipos exclusivos inline e organizar os compartilhados em `/models`
 2. **Repository** — único ponto de acesso HTTP do módulo (`inventoryRepository.ts` + adapter)
 3. **Cache** — não criar serviço de cache por módulo. O `cacheService` global (`src/services/cache/`) é importado diretamente pelo service-facade. Ver `10.1-cache.md`.
 4. **Strategy** — isolamento do ponto de decisão demo/real (`getStrategy()`)

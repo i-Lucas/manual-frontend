@@ -30,7 +30,7 @@ Projetos crescem. O que parece simples demais para justificar uma camada extra h
 
 **Sobre parecer "over-engineering":**
 
-Pode parecer excessivo criar um repository, um adapter, um cache service, um service-facade, um hook e um hook-facade para algo que "poderia ser um fetch numa linha". Não é excessivo. É o padrão correto. A complexidade não está no tamanho do problema hoje — está no tamanho que ele vai ter amanhã. Implementar os patterns sempre, mesmo quando parece desnecessário, é o que garante que o código escrito no primeiro dia seja tão fácil de manter quanto o código escrito no centésimo dia.
+Pode parecer excessivo criar um repository, um adapter, integrar o cache global, um service-facade, um hook e um hook-facade para algo que "poderia ser um fetch numa linha". Não é excessivo. É o padrão correto. A complexidade não está no tamanho do problema hoje — está no tamanho que ele vai ter amanhã. Implementar os patterns sempre, mesmo quando parece desnecessário, é o que garante que o código escrito no primeiro dia seja tão fácil de manter quanto o código escrito no centésimo dia.
 
 ## A cadeia de responsabilidades
 
@@ -45,7 +45,9 @@ Hook-api facade (único ponto público de hooks)
     ↑ moduleService
 Service-api facade (único ponto público de services)
     ↑
-Sub-services: repository · cache · validator · factory
+Sub-services do módulo: repository · adapter · validator
+    ↑
+Infraestrutura global: cache · HTTP · EventBus
 ```
 
 | Camada | Responsabilidade única | Importa de |
@@ -56,7 +58,7 @@ Sub-services: repository · cache · validator · factory
 | Sub-hooks | Estado local, actions, paginação — cada um com responsabilidade única. | Somente o service-api |
 | Service-api | Orquestrar sub-services. Único ponto de entrada para hooks. | Sub-services do módulo |
 | Repository | Chamadas HTTP. Nada mais. | httpClient global |
-| Cache service | Leitura e escrita no cache. Nada mais. | cacheService global |
+| Cache global | Fonte única de leitura e escrita dos dados em memória. Nunca é reimplementado por módulo. | cacheStore global |
 | Adapter | Converter resposta da API para modelo interno. Nada mais. | Tipos do módulo |
 | Factory (mocks) | Gerar dados mockados para modo demonstração. Nada mais. | Tipos do módulo |
 

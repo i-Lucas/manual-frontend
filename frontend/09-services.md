@@ -2,10 +2,11 @@
 
 ## Princípios
 
-- **Cada service tem uma única responsabilidade e um único motivo para mudar.** Repository faz HTTP. Cache service lê e escreve no cache. Adapter normaliza dados. Validator valida dados de negócio. Factory computa estilos ou gera mocks. Nenhum desses faz mais do que isso.
+- **Cada service tem uma única responsabilidade e um único motivo para mudar.** Repository faz HTTP. Adapter normaliza dados. Validator valida dados de negócio. Factories são admitidas para gerar mocks do modo demo, nunca para produzir estilos. Nenhum desses faz mais do que isso.
+- **Cache é infraestrutura global.** Existe um único `cacheService` em `src/services/cache/`, importado diretamente pelo service-facade de cada módulo. É proibido criar `inventoryCacheService`, pastas `*-cache/` ou qualquer wrapper de cache por módulo.
 - **Services são objetos literais ou funções puras — não classes.** Classes com estado interno criam acoplamento oculto e dificultam testes. Objects literals com métodos são suficientes e mais explícitos.
 - **Toda lógica de negócio vive nos services, nunca nos hooks.** Se há uma regra de negócio num hook, ela pertence ao service-facade ou a um sub-service. Hooks apenas orquestram estado e delegam.
-- **Um único service-facade (`moduleService`) é o único ponto público da camada de services.** Hooks nunca importam `inventoryRepository`, `inventoryCacheService` ou `inventoryValidator` diretamente. Tudo passa pelo service-facade. Se o hook precisa de algo que o service-facade não expõe, o service-facade é atualizado — não o hook.
+- **Um único service-facade (`moduleService`) é o único ponto público da camada de services.** Hooks nunca importam `inventoryRepository`, `inventoryValidator` ou o `cacheService` global diretamente. Tudo passa pelo service-facade. Se o hook precisa de algo que o service-facade não expõe, o service-facade é atualizado — não o hook.
 - **A comunicação entre módulos é exclusivamente via EventBus.** Um service nunca importa código de outro módulo. Se o service de Estoque precisa notificar o módulo de Pedidos, ele emite um evento no EventBus. O módulo de Pedidos reage à sua própria subscription — sem saber a origem.
 - **Strategy Pattern para comportamento variável.** A decisão entre demo e real, entre DEV e PROD, acontece em um único ponto — a função `getStrategy()` do service-facade. O restante do código é completamente agnóstico.
 
@@ -18,8 +19,6 @@ src/modules/Inventory/services/
 │   ├── inventoryRepository.adapter.ts
 │   └── models/
 │       └── inventoryRepository.types.ts
-├── inventory-cache/                 ← Integração com CacheService global
-│   └── inventoryCache.service.ts
 ├── inventory-validator/             ← Validações de negócio
 │   └── inventoryValidator.service.ts
 └── inventoryService.ts              ← Service-facade (único ponto público)
@@ -109,72 +108,18 @@ function resolveProductStatus(quantity: number, minQuantity: number): Product['s
 }
 ```
 
-## Cache Service do módulo
+## Consumo do cache global
+
+O módulo **não possui uma camada ou um service de cache próprio**. Seu service-facade importa o `cacheService` global e executa nele as operações necessárias. A construção genérica de chaves pertence ao `cacheKeys` global; TTLs específicos do domínio podem ser declarados nas constantes do módulo. Nenhum desses elementos encapsula o cache em outro service.
 
 ```ts
-// src/modules/Inventory/services/inventory-cache/inventoryCache.service.ts
-/**
- * @description Integração do módulo com o CacheService global.
- * Define as chaves de cache granulares do módulo de estoque.
- */
+// ✅ O service-facade consome a infraestrutura global diretamente
 import { cacheService } from '@/services/cache/cacheService';
-import type { Product, ProductList, InventorySummary } from '../../models/inventory.types';
+import { cacheKeys } from '@/services/cache/cacheKeys';
+import { INVENTORY_CACHE_TTL } from '../constants/inventory.constants';
 
-/** Prefixo raiz de todas as chaves deste módulo */
-const MODULE = 'inventory';
-
-/** TTLs específicos por tipo de dado */
-const TTL = {
-  PRODUCT_LIST: 2 * 60 * 1000,    // 2 min — dados paginados
-  PRODUCT_DETAIL: 5 * 60 * 1000,  // 5 min — detalhe de um produto
-  SUMMARY: 60 * 1000,             // 1 min — dados críticos do header
-} as const;
-
-export const inventoryCacheService = {
-  /** Monta a chave de cache para uma lista paginada com filtros */
-  buildListKey(page: number, search?: string, filter?: string): string {
-    return `${MODULE}:list:${page}:${search ?? '_'}:${filter ?? '_'}`;
-  },
-
-  /** Monta a chave para um produto individual */
-  buildProductKey(id: string): string {
-    return `${MODULE}:product:${id}`;
-  },
-
-  getProductList(page: number, search?: string, filter?: string): ProductList | null {
-    return cacheService.get<ProductList>(this.buildListKey(page, search, filter));
-  },
-
-  setProductList(data: ProductList, page: number, search?: string, filter?: string): void {
-    cacheService.set(this.buildListKey(page, search, filter), data, TTL.PRODUCT_LIST);
-  },
-
-  getProduct(id: string): Product | null {
-    return cacheService.get<Product>(this.buildProductKey(id));
-  },
-
-  setProduct(product: Product): void {
-    cacheService.set(this.buildProductKey(product.id), product, TTL.PRODUCT_DETAIL);
-  },
-
-  /** Atualiza um produto no cache sem invalidar a lista inteira */
-  patchProduct(product: Product): void {
-    this.setProduct(product);
-  },
-
-  /** Invalida cache de listas do módulo (não afeta cache de produtos individuais) */
-  invalidateLists(): void {
-    cacheService.invalidateByPrefix(`${MODULE}:list`);
-  },
-
-  getSummary(): InventorySummary | null {
-    return cacheService.get<InventorySummary>(`${MODULE}:summary`);
-  },
-
-  setSummary(data: InventorySummary): void {
-    cacheService.set(`${MODULE}:summary`, data, TTL.SUMMARY);
-  },
-};
+// ❌ Não existe integração local, wrapper ou facade intermediário de cache
+import { inventoryCacheService } from './inventory-cache/inventoryCache.service';
 ```
 
 ## Service-facade (único ponto público do módulo)
@@ -183,16 +128,18 @@ export const inventoryCacheService = {
 // src/modules/Inventory/services/inventoryService.ts
 /**
  * @description Service-facade do módulo de estoque.
- * Único ponto público. Orquestra repository, cache, validator e strategy.
+ * Único ponto público. Orquestra repository, cache global, validator e strategy.
  * Os hooks apenas consomem este service — nunca os sub-services diretamente.
  * @since 2024-01-15
  */
 import { inventoryRepository } from './inventory-repository/inventoryRepository';
-import { inventoryCacheService } from './inventory-cache/inventoryCache.service';
 import { inventoryValidator } from './inventory-validator/inventoryValidator.service';
+import { cacheService } from '@/services/cache/cacheService';
+import { cacheKeys } from '@/services/cache/cacheKeys';
 import { eventBus } from '@/services/eventBus/eventBus';
 import { isDemoMode } from '@/utils/environment.util';
 import { createDemoInventoryStrategy } from '../demo/factory';
+import { INVENTORY_CACHE_TTL } from '../constants/inventory.constants';
 import type { FetchProductsParams, Product, InventorySummary, ProductList } from '../models/inventory.types';
 import type { Result } from '@/models/result.types';
 
@@ -215,21 +162,23 @@ export const inventoryService = {
    * Cache hit → retorna imediatamente. Cache miss → fetch + armazena.
    */
   async fetchProducts(params: FetchProductsParams): Promise<Result<ProductList>> {
-    const cached = inventoryCacheService.getProductList(params.page, params.search, params.filter);
+    const listKey = cacheKeys.build('inventory', 'list', params.page, params.search, params.filter);
+    const cached = cacheService.get<ProductList>(listKey);
     if (cached) return { ok: true, data: cached };
 
     const result = await getStrategy().fetchProducts(params);
-    if (result.ok) inventoryCacheService.setProductList(result.data, params.page, params.search, params.filter);
+    if (result.ok) cacheService.set(listKey, result.data, INVENTORY_CACHE_TTL.PRODUCT_LIST);
     return result;
   },
 
   /** Busca resumo do header. Cache de curta duração por ser dado crítico. */
   async fetchSummary(): Promise<Result<InventorySummary>> {
-    const cached = inventoryCacheService.getSummary();
+    const summaryKey = cacheKeys.build('inventory', 'header', '_', 'summary', '_');
+    const cached = cacheService.get<InventorySummary>(summaryKey);
     if (cached) return { ok: true, data: cached };
 
     const result = await getStrategy().fetchSummary();
-    if (result.ok) inventoryCacheService.setSummary(result.data);
+    if (result.ok) cacheService.set(summaryKey, result.data, INVENTORY_CACHE_TTL.SUMMARY);
     return result;
   },
 
@@ -243,19 +192,20 @@ export const inventoryService = {
     if (!validation.ok) return validation;
 
     // Salva o dado original antes do update otimista (necessário para rollback)
-    const original = inventoryCacheService.getProduct(product.id);
+    const productKey = cacheKeys.build('inventory', 'product', '_', 'detail', product.id);
+    const original = cacheService.get<Product>(productKey);
 
     // Atualização otimista imediata
-    inventoryCacheService.patchProduct(product);
+    cacheService.set(productKey, product, INVENTORY_CACHE_TTL.PRODUCT_DETAIL);
 
     const result = await getStrategy().updateProduct(product);
     if (result.ok) {
-      inventoryCacheService.patchProduct(result.data);
+      cacheService.set(productKey, result.data, INVENTORY_CACHE_TTL.PRODUCT_DETAIL);
       // Notifica outros módulos via EventBus (ex: módulo de relatórios)
       eventBus.emit('inventory:product:updated', { productId: result.data.id });
     } else if (original) {
       // Rollback: restaura o estado anterior ao update otimista
-      inventoryCacheService.patchProduct(original);
+      cacheService.set(productKey, original, INVENTORY_CACHE_TTL.PRODUCT_DETAIL);
     }
     return result;
   },

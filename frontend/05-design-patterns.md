@@ -237,9 +237,9 @@ export function InventoryHeaderContainer() {
 Agrega múltiplas partes internas e expõe uma interface única. Aplicado em duas camadas obrigatórias:
 
 - **`useModuleApi`** — hook-facade: agrega todos os sub-hooks do módulo. É o **único** arquivo de hook que o Container importa. Containers nunca importam sub-hooks diretamente.
-- **`moduleService`** — service-facade: agrega todos os sub-services do módulo. É o **único** arquivo de service que o hook-api importa. Hooks nunca importam sub-services (repository, cache, validator) diretamente.
+- **`moduleService`** — service-facade: agrega os sub-services do módulo e consome a infraestrutura global necessária. É o **único** arquivo de service que o hook-api importa. Hooks nunca importam repository ou validator diretamente; o `cacheService` global também é consumido pelo service-facade, nunca pelo hook.
 
-> **Por quê?** Sem o facade, qualquer mudança interna (renomear um sub-hook, dividir um service em dois, adicionar um cache service) exige alterar todos os arquivos que os importavam diretamente. Com o facade, a mudança fica encapsulada — nenhum arquivo externo precisa ser tocado.
+> **Por quê?** Sem o facade, qualquer mudança interna (renomear um sub-hook, dividir um service em dois, ajustar o consumo do cache global) exige alterar todos os arquivos que os importavam diretamente. Com o facade, a mudança fica encapsulada — nenhum arquivo externo precisa ser tocado.
 
 ## Observer Pattern (EventBus)
 

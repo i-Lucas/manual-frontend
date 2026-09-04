@@ -54,8 +54,8 @@ Sessões da página. Sempre divididos em `Component` (visual puro) + `Container`
 1. **Componentes visuais recebem apenas props e callbacks.** Nunca consomem hooks, services, nem factories. Um componente visual que importa um hook é um erro de arquitetura — mova a lógica para o Container. **Única exceção: `useT`** (i18n, ver `10.6`) — texto é conteúdo, não lógica; Presenters podem consumir `useT` e nenhum outro hook.
 2. **Todo componente usa Composition Pattern.** Mesmo que hoje só exista uma variação. Componentes crescem — o padrão já deve estar estabelecido antes que a segunda variação apareça.
 3. **`memo()` em todos os componentes visuais.** Sem exceção. O Container decide quando re-renderizar; o Presenter nunca deve re-renderizar por causa de mudanças que não afetam suas props.
-4. **Nunca `style={{}}` inline.** Valores estáticos → Bootstrap. Valores dinâmicos de runtime → factory no service-api, resultado chega via props.
-5. **Tipos em `/models`, nunca inline.** Tipos inline em props tornam o componente ilegível e impossibilitam reutilização.
+4. **Nunca `style={{}}` inline e nunca use factory de estilos.** Valores estáticos → Bootstrap. Variações visuais de runtime → variantes semânticas já tipadas, utilities/tokens globais e Composition Pattern. O service-api entrega dados de domínio; nunca entrega estilos, objetos CSS ou nomes de classe.
+5. **O tipo vive no nível mais baixo em que é compartilhado.** Se é usado somente neste arquivo, permanece como `interface` ou `type` inline. Ao ser usado por dois ou mais arquivos, sobe para o `/models` mais próximo conforme a hierarquia da seção `15`.
 6. **Containers importam apenas o hook-api do módulo.** Nenhum sub-hook, nenhum service, nenhuma factory é importada diretamente pelo Container.
 7. **Condicionais de renderização pertencem a Guard components.** Nem o Presenter nem o Container decidem se algo é renderizado ou não — essa decisão é de um `*Guard` dedicado.
 8. **Nenhuma string de UI literal.** Todo texto visível vem do `useT` (ver `10.6`). Um título, label ou mensagem escrito direto no JSX é um erro — equivale a um `style` inline.

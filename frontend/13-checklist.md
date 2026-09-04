@@ -12,7 +12,7 @@ Antes de qualquer commit, verificar:
 
 **TypeScript**
 - [ ] Sem uso de `any` em nenhum arquivo
-- [ ] Todos os tipos definidos em `/models` (não inline)
+- [ ] Tipos usados em um único arquivo permanecem nele; tipos compartilhados estão no `/models` mais próximo
 - [ ] Todas as funções com tipos de parâmetro e retorno explícitos
 - [ ] Nenhum `as NomeDoTipo` desnecessário — se precisar de cast, o tipo está modelado incorretamente
 
@@ -21,6 +21,7 @@ Antes de qualquer commit, verificar:
 - [ ] Composition Pattern aplicado — sem props booleanas que mudam comportamento (`isLoading`, `hasError`, `showBadge`)
 - [ ] `memo()` em todos os componentes visuais
 - [ ] Nenhum `style={{}}` inline
+- [ ] Nenhuma factory de estilos; variações visuais usam utilities/tokens globais, variantes tipadas e composição
 - [ ] Condicionais de renderização encapsuladas em Guard components (`*Guard`), não em Containers ou Presenters
 - [ ] Container importa apenas o hook-api do módulo — nenhum sub-hook, service ou factory diretamente
 - [ ] Nenhum import de `react-bootstrap` fora de `src/components/` (exceto `Container`/`Row`/`Col`/`Stack`)
@@ -45,10 +46,11 @@ Antes de qualquer commit, verificar:
 - [ ] Repository é o único ponto de acesso HTTP — nenhum `fetch` fora dele
 - [ ] Adapter normaliza a resposta da API antes de qualquer dado chegar ao restante do sistema
 - [ ] Strategy Pattern isola a decisão demo/real em um único ponto (`getStrategy()`)
+- [ ] Service-facade importa o `cacheService` global diretamente; não existe `*Cache.service.ts`, wrapper ou pasta de cache no módulo
 - [ ] Cache consultado antes de qualquer fetch; resultado da API persistido no cache após fetch bem-sucedido
 - [ ] Rollback de cache implementado em toda operação otimista (original salvo antes do update)
 - [ ] EventBus usado para comunicação entre módulos — nenhum service importa service de outro módulo
-- [ ] Factory de estilos chamada pelo service-api — nunca pelo hook, nunca pelo Container
+- [ ] Service-api retorna dados de domínio — nunca estilos, objetos CSS, nomes de classe ou factories de estilo
 - [ ] `moduleService` (service-facade) é o único arquivo de service exportado para fora da pasta de services
 
 **Internacionalização (ver 10.6)**
@@ -59,14 +61,14 @@ Antes de qualquer commit, verificar:
 
 **Constantes (ver 16)**
 - [ ] Nenhuma constante "mágica" solta em componente/hook/service — todas em `constants/`
-- [ ] Texto NÃO está em `constants/` (está no i18n); tipos NÃO estão em `constants/` (estão em `models/`)
+- [ ] Texto NÃO está em `constants/` (está no i18n); tipos NÃO estão em `constants/` (ficam inline ou em `models/`, conforme o compartilhamento)
 - [ ] Constantes nomeadas `SCREAMING_SNAKE_CASE` e prefixadas pelo módulo quando exportadas
 
 **Documentação**
 - [ ] JSDoc no topo de cada arquivo (módulo, descrição, responsabilidade)
 - [ ] CHANGELOG atualizado
 - [ ] `/docs` do módulo atualizado se necessário
-- [ ] Tipos exportados e documentados em `/models`
+- [ ] Tipos compartilhados estão exportados e documentados no `/models` correspondente
 - [ ] Novos eventos do EventBus registrados em `eventBus.types.ts` antes do uso
 
 ---

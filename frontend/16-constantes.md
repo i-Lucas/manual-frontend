@@ -8,7 +8,7 @@
 
 Constantes espalhadas pelo código são o tipo de dívida técnica que cresce em silêncio: um `PAGE_SIZE = 5` num hook, um `[300, 500]` de delay noutro, um `2` de janela de paginação num componente, um TTL embutido num service. Quando o produto precisa mudar "5 por página" para "10 por página", a mudança vira uma caçada por arquivos. Pior: a mesma constante acaba duplicada com valores diferentes em lugares diferentes.
 
-A solução é a mesma filosofia de uniformidade do resto do guia: **um lugar previsível para cada coisa.** Constantes de um módulo vivem em `constants/`, exatamente como tipos vivem em `models/`.
+A solução é a mesma filosofia de uniformidade do resto do guia: **um lugar previsível para cada coisa.** Constantes compartilhadas vivem em `constants/`; tipos compartilhados vivem em `models/`, enquanto tipos usados por um único arquivo permanecem nele.
 
 ## Onde vivem (hierarquia, igual à de tipos)
 
@@ -35,7 +35,7 @@ Quando o arquivo de constantes do módulo cresce demais, ele vira uma pasta `con
 ## O que NÃO vai em `constants/`
 
 - **Texto de UI** (labels, títulos, placeholders, mensagens) → vai para o **i18n** (`10.6-i18n.md`). Texto nunca é constante de código — é conteúdo, e conteúdo é traduzível.
-- **Tipos, interfaces, unions** → vão para `models/` (`15-tipos.md`).
+- **Tipos, interfaces, unions** → permanecem inline quando usados em um único arquivo ou vão para o `models/` correspondente quando compartilhados (`15-tipos.md`).
 - **Dados mockados** → vão para `demo/` (`11-modo-demo.md`).
 
 > Mapa código→cor fica em `constants/` (é valor, não texto). Mapa código→label fica no **i18n** (é texto). Quando ambos existem para o mesmo enum, eles vivem em arquivos diferentes — cor em constants, label em i18n — pela mesma razão que tipo e estilo vivem separados.
